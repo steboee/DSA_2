@@ -89,6 +89,8 @@ int insert(NODE** bunka,int data){
 
 
 
+
+
     if (abs(data) < A->data && A->left == NULL ){
         A->left = make_new_node(abs(data));
     }
