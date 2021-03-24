@@ -7,7 +7,9 @@ typedef struct node{
     int data;
     struct node* left;
     struct node* right;
-    int ht;
+    int left_subtree;
+    int right_subtree;
+    int balance_factor;
 }NODE;
 
 
@@ -22,115 +24,17 @@ NODE* make_new_node(int data){
     new->data = data;
     new->left = NULL;
     new->right = NULL;
-    new->ht = 0;
+    new->right_subtree=0;
+    new->left_subtree=0;
+    new->balance_factor = 0;
     return new;
 
 
 }
 
-int leftside=0;
-int rightside=0;
-int bf;
-
-int height(NODE *a)
-{
-    int lh,rh;
-
-    if(a==NULL){
-        return(0);
-    }
-
-    if(a->left==NULL){
-        lh=0;
-    }
-
-    else{
-        lh=1+a->left->ht;
-    }
 
 
-    if(a->right==NULL)
-        rh=0;
-    else
-        rh=1+a->right->ht;
-
-    if(lh>rh)
-        return(lh);
-
-    return(rh);
-}
-
-NODE * rotation_right(NODE *x)
-{
-    NODE *y;
-    y=x->left;
-    x->left=y->right;
-    y->right=x;
-    x->ht=height(x);
-    y->ht=height(y);
-    return(y);
-}
-
-NODE * rotation_left(NODE *samp)
-{
-    NODE *y;
-    y=samp->right;
-    samp->right=y->left;
-    y->left=samp;
-    samp->ht=height(samp);
-    y->ht=height(y);
-
-    return(y);
-}
-
-NODE * RR(NODE *T)
-{
-    T=rotation_left(T);
-    return(T);
-}
-
-NODE * LL(NODE *T)
-{
-    T=rotation_right(T);
-    return(T);
-}
-
-NODE * LR(NODE *T)
-{
-    T->left=rotation_left(T->left);
-    T=rotation_right(T);
-
-    return(T);
-}
-
-NODE * RL(NODE *T)
-{
-    T->right=rotation_right(T->right);
-    T=rotation_left(T);
-    return(T);
-}
-
-int BF(NODE *T)
-{
-    int lh,rh;
-    if(T==NULL)
-        return(0);
-
-    if(T->left==NULL)
-        lh=0;
-    else
-        lh=1+T->left->ht;
-
-    if(T->right==NULL)
-        rh=0;
-    else
-        rh=1+T->right->ht;
-
-    return(lh-rh);
-}
-
-
-/*NODE* rotation_left(NODE**smt){
+NODE* rotation_left(NODE**smt){
 
     NODE *rot_tree;
     NODE *leftside;
@@ -164,8 +68,6 @@ NODE* rotation_right(NODE **smt){
     BASE->left = NULL;
     BASE->balance_factor=0;
 
-
-
     return rot_tree;
 
 
@@ -173,102 +75,68 @@ NODE* rotation_right(NODE **smt){
 
 
 }
-*/
 
-/*int insert(NODE** bunka,int data){
+
+int insert(NODE** bunka,int data){
     NODE *A;
-
 
     if (*bunka == NULL){            // úplne prvé dáta ...
         *bunka = make_new_node(data);
         return 0;
     }
 
+
     A = *bunka;
-    if(data > 0){
-        if(data>=A->data){
-            rightside++;
+    if (A == NULL){
+        A = make_new_node(data)
+    }
+
+
+
+    if(data >= A->data){
+        A->right_subtree++;
+        A->balance_factor = A->left_subtree - A->right_subtree;
+    }
+    else if(data<A->data){
+        A->left_subtree++;
+        A->balance_factor = A->left_subtree-A->right_subtree;
+    }
+
+    if(data < A->data && A->left != NULL ){
+        insert(&A->left,data);
+    }
+    else if(data >= A->data && A->right != NULL){
+        insert(&A->left,data);
+    }
+
+
+
+    if (data < A->data){
+        A->left = make_new_node(data);
+        if(A->balance_factor > 1){
+            A = rotation_right(&A);
         }
-        else if(data<A->data){
-            leftside++;
+        else if (A->balance_factor < -1){
+            A = rotation_left(&A);
         }
     }
 
 
-    if (abs(data) < A->data && A->left == NULL ){
-        A->left = make_new_node(abs(data));
-    }
-
-    else if(abs(data) < A->data && A->left != NULL ){
-        if (data > 0){
-            insert(&A->left,-data);
-        }
-        else{
-            insert(&A->left,data);
-        }
-
-    }
-
-    else if(abs(data) >= A->data && A->right == NULL){
+    if(data >= A->data){
         A->right = make_new_node(abs(data));
-    }
-    else if(abs(data) >= A->data && A->right != NULL){
-        if (data > 0){
-            insert(&A->left,-data);
+        if(A->balance_factor > 1){
+            A = rotation_right(&A);
         }
-        else{
-            insert(&A->left,data);
+        else if (A->balance_factor < -1){
+            A = rotation_left(&A);
         }
+
     }
 
-
-    if(A->ht < -1){
-        A = rotation_left(&A);
-        *bunka = A;
-    }
-    else if(A->balance_factor > 1){
-        A = rotation_right(&A);
-        *bunka = A;
-    }
 
 
 
     return 0;
-}
-*/
-NODE * insert(NODE *T,int x)
-{
-    if(T==NULL)
-    {
-        T=(NODE*)malloc(sizeof(NODE));
-        T->data=x;
-        T->left=NULL;
-        T->right=NULL;
-    }
-    else
-    if(x > T->data)		// insert in right subtree
-    {
-        T->right=insert(T->right,x);
-        if(BF(T)==-2)
-            if(x>T->right->data)
-                T=RR(T);
-            else
-                T=RL(T);
-    }
-    else
-    if(x<T->data)
-    {
-        T->left=insert(T->left,x);
-        if(BF(T)==2)
-            if(x < T->left->data)
-                T=LL(T);
-            else
-                T=LR(T);
-    }
-
-    T->ht=height(T);
-
-    return(T);
 }
 
 
@@ -281,11 +149,10 @@ int main() {
     insert(&root,100);
     insert(&root,7);
     insert(&root,10);
-    insert(&root,200);
+    insert(&root,300);
 
 
 
-    printf("BF = %d\n",bf);
 
     return 0;
 }
