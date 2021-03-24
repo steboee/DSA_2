@@ -80,6 +80,7 @@ int search(PERSON *A,char*data){
 
 }
 
+
 PERSON* rotation_left(PERSON*A){
     PERSON *rot_tree;
     rot_tree = A->right;
