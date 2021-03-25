@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-
+#include <limits.h>
 
 int celkovy_pocet;
 
@@ -15,6 +15,20 @@ typedef struct person{
     struct person* right;
     int height;
 }PERSON;
+
+
+
+
+int hash(unsigned char *str)
+{
+    int hash = 5381;
+    int c;
+
+    while (c = *str++)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
 
 
 
@@ -63,19 +77,16 @@ int search(PERSON *A,char*data){
         return 0;
     }
 
-    if (strcmp(data,A->name)==0){
+    if (hash(data) == hash(A->name)){
         return 1;
     }
 
-    if (strcmp(data,A->name)>0){
+    if (hash(data) > hash(A->name)){
         search(A->right,data);
     }
-    else if(strcmp(data,A->name)<0){
+    else if(hash(data) < hash(A->name)){
         search(A->left,data);
     }
-
-
-
 
 }
 
@@ -188,10 +199,11 @@ PERSON * insert(PERSON* A,char* data){
     }
 
     else{
-        if(strcmp(data,A->name)>=0){               // postupujem doprava
+
+        if(hash(data) >= hash(A->name)){               // postupujem doprava
             A->right = insert(A->right,data);       //pravé dieťa rootu. posielam do funkcie insert
-            if (balance_factor(A) == -2){            // po rekurzii skontrolujem či je BF v rámci normyx
-                if(strcmp(data,A->right->name)>0){
+            if (balance_factor(A) < -1){            // po rekurzii skontrolujem či je BF v rámci normyx
+                if(hash(data) >= hash(A->name)){
                     A = rotation_left(A);               // Prípad RR  -> rotácia vľavo
                 }
                 else{
@@ -201,10 +213,10 @@ PERSON * insert(PERSON* A,char* data){
 
             }
         }
-        else if(strcmp(data,A->name)<0){
+        else if(hash(data) < hash(A->name)){
             A->left = insert(A->left,data);
-            if(balance_factor(A) == 2 ){
-                if(strcmp(data,A->left->name)<0){
+            if(balance_factor(A) > 1 ){
+                if(hash(data) < hash(A->name)){
                     A = rotation_right(A);          //Prípad LL
                 }
                 else{
@@ -223,14 +235,15 @@ PERSON * insert(PERSON* A,char* data){
 
 char *randstring(size_t length) {
 
-    static char charset[] = "abcdefghijklmnopqrstuvwxyz";
+    static char charset[] = "abcdefghijasdfbathzsrbgdfvrgetzutdzhgdf.ô§úpoiugfhjtuklmnopqrstuvwxyz";
     char *randomString = NULL;
 
     if (length) {
         randomString = malloc(sizeof(char) * (length +1));
-
+        srand(100);
         if (randomString) {
-            for (int n = 0;n < length;n++) {
+            for (int n = 1;n <= length;n++) {
+
                 int key = rand() % (int)(sizeof(charset) -1);
                 randomString[n] = charset[key];
             }
@@ -245,41 +258,33 @@ char *randstring(size_t length) {
 
 
 
-char* gen_random(char **s, const int len) {
-    static const char alphanum[] =     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    char*a;
-    a=s;
-
-    for (int i = 0; i < len; ++i) {
-        *(a+i) = alphanum[rand() % (sizeof(alphanum) - 1)];
-    }
-
-    *(a+len) = 0;
-    return a;
-}
-
-
 
 
 int main() {
+    char c[1000];
+    FILE *fptr;
+    if ((fptr = fopen("C:\\Users\\ACER\\CLionProjects\\DSA_2\\mena.txt", "r")) == NULL) {
+        printf("Error! opening file");
+        exit(1);
+    }
+
+    char*meno;
 
     PERSON* root=NULL;
     int i;
-    celkovy_pocet = 10000000;
+    celkovy_pocet = 0;
     clock_t start = clock();
-    for (i = 0; i<10000000;i++){
+
+
+    while(fgets(c, 1000, fptr)!=NULL){
+        strcpy(meno,c);
         char*data;
-        data = gen_random(&data,10);
-        if (search(root,data)){
-            celkovy_pocet--;
-            continue;
-        }
-        else{
-            root = insert(root,data);
-        }
-
-
+        data = randstring(10);
+        root = insert(root,meno);
+        celkovy_pocet++;
     }
+
+
 
     clock_t stop = clock();
     double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
