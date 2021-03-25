@@ -11,7 +11,7 @@ typedef struct person{
     int age;
     struct person* left;
     struct person* right;
-    int height
+    int height;
 }PERSON;
 
 int max(int a, int b){
@@ -22,40 +22,44 @@ int max(int a, int b){
 }
 
 int height_of_tree(PERSON*A,int balance){
-    int left_sub_tree=0;
-    int right_sub_tree=0;
-    if (A == NULL){
-        return 0;
-    }
+    int lh,rh;
+    if(A==NULL)
+        return(0);
 
-    if(A->right == NULL){               //na pravo už niesu žiadne deti
-        right_sub_tree = 0;
-    }
-    if(A->left == NULL){                //na ľavo už niesu žiadne deti
-        left_sub_tree = 0;
-    }
+    if(A->left==NULL)
+        lh=0;
+    else
+        lh=1+A->left->height;
 
+    if(A->right==NULL)
+        rh=0;
+    else
+        rh=1+A->right->height;
 
+    if(lh>rh)
+        return(lh);
 
-    if(A->right != NULL){
-        right_sub_tree = 1 + A->right->height;
-    }
-    if(A->left != NULL){
-        left_sub_tree = 1 + A->left->height;
-    }
-
-
-    if (balance == 1){
-        return (left_sub_tree - right_sub_tree);
-    }
-
-    return max(right_sub_tree,left_sub_tree);
+    return(rh);
 
 }
 
 
 int balance_factor(PERSON*A){
-    return height_of_tree(A,1);
+    int lh,rh;
+    if(A==NULL)
+        return(0);
+
+    if(A->left==NULL)
+        lh=0;
+    else
+        lh=1+A->left->height;
+
+    if(A->right==NULL)
+        rh=0;
+    else
+        rh=1+A->right->height;
+
+    return(lh-rh);
 }
 
 
@@ -86,8 +90,8 @@ PERSON* rotation_left(PERSON*A){
     rot_tree = A->right;
     A->right = rot_tree->left;
     rot_tree->left = A;
-    A->height = height_of_tree(A,0);
     rot_tree->height = height_of_tree(rot_tree,0);
+    A->height = height_of_tree(A,0);
     return rot_tree;
 }
 
@@ -96,8 +100,8 @@ PERSON* rotation_right(PERSON *A){
     rot_tree = A->left;
     A->left = rot_tree->right;
     rot_tree->right = A;
-    A->height = height_of_tree(A,0);
     rot_tree->height = height_of_tree(rot_tree,0);
+    A->height = height_of_tree(A,0);
     return rot_tree;
 }
 
@@ -111,56 +115,58 @@ PERSON* delete(PERSON*A,char*key){
         return NULL;
     }
 
-    if(strcmp(key,A->name)>0){                      // idem doprava od rootu
+    if(strcmp(key,A->name)>0){                      // idem doprava od node
         A->right = delete(A->right,key);            // rekurzia
         if (balance_factor(A) > 1){                 // za každým vnorením skontrolujem BF
-            if(balance_factor(A->left)>=0){
-                A = rotation_right(A);              //Ak je BF
+            if(balance_factor(A->left) > 1){
+                A = rotation_right(A);              //Rotácia LL
             }
             else{
-                A->left = rotation_left(A->left);
+                A->left = rotation_left(A->left);   //Rotácia LR
                 A = rotation_right(A);
             }
         }
     }
-    else if(strcmp(key,A->name)<0){
+    else if(strcmp(key,A->name)<0){                     // key je mensí než key v danom node , postupujem dolava
 
-        A->left = delete(A->left,key);
-        if (balance_factor(A) < 1){
-            if(balance_factor(A->right)<=0){
-                A = rotation_left(A);
+        A->left = delete(A->left,key);                  // reukurzivne volam funkciu delete ale už s ľavým child
+        if (balance_factor(A) < -1){                     //
+            if(balance_factor(A->right) < -1){
+                A = rotation_left(A);               //Prípad RR
             }
             else{
-                A->right = rotation_right(A->right);
+                A->right = rotation_right(A->right);    //Prípad RL
                 A = rotation_left(A);
             }
         }
     }
-    else{
-        if(A->right !=NULL){
-            temp = A->right;
-            while (temp->left != NULL){
-                temp = temp->left;
-            }
-            A->name = temp->name;
-            A->right = delete(A->right,temp->name);
-            if (balance_factor(A) > 1){
-                if(balance_factor(A->left)>=0){
-                    A = rotation_right(A);
-                }
-                else{
-                    A->left = rotation_left(A->left);
-                    A = rotation_right(A);
-                }
-            }
 
-        }
+
+    else {                          // Našiel sa záznam ktorý chcem odtrániť                   // A - > node ktorý chcem odtrániť
+        if(A->right!=NULL){
+
+            temp=A->right;
+            while(A->left!= NULL){
+                temp=temp->left;
+            }
+            A->name=temp->name;
+            A->age = temp->age;
+            A->right=delete(A->right,temp->name);
+
+            if(balance_factor(A)==2)
+                if(balance_factor(A->left)>=0)
+                    A = rotation_right(A);              //Rotácia LL
+                else
+                    A->left = rotation_left(A->left);   //Rotácia LR
+                     A = rotation_right(A);
+				}
         else{
-            return (A->left);
+            return(A->left);
         }
+
+    A->height=height_of_tree(A,0);
+    return(A);
     }
-    A->height = height_of_tree(A,0);
-    return (A);
 }
 
 
@@ -199,14 +205,14 @@ PERSON * insert(PERSON* A,char* data){
     }
 
     else{
-        if(strcmp(data,A->name) > 0){               // postupujem doprava
+        if(strcmp(data,A->name) >= 0){               // postupujem doprava
             A->right = insert(A->right,data);       //pravé dieťa rootu. posielam do funkcie insert
-            if (balance_factor(A) < -1){            // po rekurzii skontrolujem či je BF v rámci normyx
-                if(strcmp(data,A->right->name)>0){      // Prípad RR
-                    A = rotation_left(A);
+            if (balance_factor(A) == -2){            // po rekurzii skontrolujem či je BF v rámci normyx
+                if(strcmp(data,A->right->name)>0){
+                    A = rotation_left(A);               // Prípad RR  -> rotácia vľavo
                 }
                 else{
-                    A->right = rotation_right(A->right);
+                    A->right = rotation_right(A->right);    // Prípad RL
                     A = rotation_left(A);
                 }
 
@@ -214,12 +220,12 @@ PERSON * insert(PERSON* A,char* data){
         }
         else if(strcmp(data,A->name) < 0){
             A->left = insert(A->left,data);
-            if(balance_factor(A) > 1){
+            if(balance_factor(A) == 2 ){
                 if(strcmp(data,A->left->name)<0){
-                    A = rotation_right(A);
+                    A = rotation_right(A);          //Prípad LL
                 }
                 else{
-                    A->left = rotation_left(A->left);
+                    A->left = rotation_left(A->left);       //Prípad LR
                     A = rotation_right(A);
                 }
             }
@@ -227,30 +233,61 @@ PERSON * insert(PERSON* A,char* data){
     }
     A->height=height_of_tree(A,0);
 
-
+    //printf("inserted string : %s\n",A->name);
     return A;
 }
+
+
+char *randstring(size_t length) {
+
+    static char charset[] = "abcdefghijklmnopqrstuvwxyz";
+    char *randomString = NULL;
+
+    if (length) {
+        randomString = malloc(sizeof(char) * (length +1));
+
+        if (randomString) {
+            for (int n = 0;n < length;n++) {
+                int key = rand() % (int)(sizeof(charset) -1);
+                randomString[n] = charset[key];
+            }
+
+            randomString[length] = '\0';
+        }
+    }
+
+    return randomString;
+}
+
 
 
 int main() {
 
     PERSON* root=NULL;
+    int i;
 
-    root = insert(root,"A");
-    root = insert(root,"B");
-    root = insert(root,"C");
-    root = insert(root,"D");
-    root = insert(root,"E");
-    root = insert(root,"F");
+    clock_t start = clock();
+    for (i = 0; i<20;i++){
+        char*data;
+        data = randstring(10);
+        root = insert(root,data);
 
-
-    root = delete(root,"");
-    if(search(root,"Ctibor")){
-        printf("Nasiel sa\n");
     }
-    else{
-        printf("Nenasiel sa\n");
+    clock_t stop = clock();
+    double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+    printf("Time elapsed in ms: %f\n", elapsed);
+    printf("Height of tree: %d\n", root->height-1);
+
+
+    char* meno = randstring(10);
+    if(search(root,meno)){
+        printf("%s\n",meno);
+        printf("NASLO SA");
     }
+
+
+
+
 
 
 
