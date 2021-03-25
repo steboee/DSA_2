@@ -1,9 +1,11 @@
 
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <time.h>
 #include <string.h>
 
+
+int celkovy_pocet;
 
 
 typedef struct person{
@@ -14,12 +16,7 @@ typedef struct person{
     int height;
 }PERSON;
 
-int max(int a, int b){
-    if (a > b){
-        return a;
-    }
-    return b;
-}
+
 
 int height_of_tree(PERSON*A,int balance){
     int lh,rh;
@@ -43,7 +40,6 @@ int height_of_tree(PERSON*A,int balance){
 
 }
 
-
 int balance_factor(PERSON*A){
     int lh,rh;
     if(A==NULL)
@@ -61,7 +57,6 @@ int balance_factor(PERSON*A){
 
     return(lh-rh);
 }
-
 
 int search(PERSON *A,char*data){
     if (A == NULL){
@@ -84,7 +79,6 @@ int search(PERSON *A,char*data){
 
 }
 
-
 PERSON* rotation_left(PERSON*A){
     PERSON *rot_tree;
     rot_tree = A->right;
@@ -104,9 +98,6 @@ PERSON* rotation_right(PERSON *A){
     A->height = height_of_tree(A,0);
     return rot_tree;
 }
-
-
-
 
 PERSON* delete(PERSON*A,char*key){
     PERSON*temp;
@@ -169,11 +160,6 @@ PERSON* delete(PERSON*A,char*key){
     }
 }
 
-
-
-
-
-
 PERSON* make_new_node(char* data){
     PERSON* new = (PERSON*)malloc(sizeof(PERSON));
     new->name = data;
@@ -193,9 +179,6 @@ PERSON* make_new_node(char* data){
 
 }
 
-
-
-
 PERSON * insert(PERSON* A,char* data){
 
 
@@ -205,7 +188,7 @@ PERSON * insert(PERSON* A,char* data){
     }
 
     else{
-        if(strcmp(data,A->name) >= 0){               // postupujem doprava
+        if(strcmp(data,A->name)>=0){               // postupujem doprava
             A->right = insert(A->right,data);       //pravé dieťa rootu. posielam do funkcie insert
             if (balance_factor(A) == -2){            // po rekurzii skontrolujem či je BF v rámci normyx
                 if(strcmp(data,A->right->name)>0){
@@ -218,7 +201,7 @@ PERSON * insert(PERSON* A,char* data){
 
             }
         }
-        else if(strcmp(data,A->name) < 0){
+        else if(strcmp(data,A->name)<0){
             A->left = insert(A->left,data);
             if(balance_factor(A) == 2 ){
                 if(strcmp(data,A->left->name)<0){
@@ -230,13 +213,13 @@ PERSON * insert(PERSON* A,char* data){
                 }
             }
         }
+
     }
     A->height=height_of_tree(A,0);
 
     //printf("inserted string : %s\n",A->name);
     return A;
 }
-
 
 char *randstring(size_t length) {
 
@@ -261,29 +244,52 @@ char *randstring(size_t length) {
 
 
 
+
+char* gen_random(char **s, const int len) {
+    static const char alphanum[] =     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    char*a;
+    a=s;
+
+    for (int i = 0; i < len; ++i) {
+        *(a+i) = alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+
+    *(a+len) = 0;
+    return a;
+}
+
+
+
+
 int main() {
 
     PERSON* root=NULL;
     int i;
-
+    celkovy_pocet = 10000000;
     clock_t start = clock();
-    for (i = 0; i<20;i++){
+    for (i = 0; i<10000000;i++){
         char*data;
-        data = randstring(10);
-        root = insert(root,data);
+        data = gen_random(&data,10);
+        if (search(root,data)){
+            celkovy_pocet--;
+            continue;
+        }
+        else{
+            root = insert(root,data);
+        }
+
 
     }
+
     clock_t stop = clock();
     double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     printf("Time elapsed in ms: %f\n", elapsed);
-    printf("Height of tree: %d\n", root->height-1);
+    printf("N: %d\n",celkovy_pocet);
+    printf("Height of tree: %d\n", root->height);
 
 
-    char* meno = randstring(10);
-    if(search(root,meno)){
-        printf("%s\n",meno);
-        printf("NASLO SA");
-    }
+
+
 
 
 
