@@ -234,7 +234,6 @@ char *randstring(size_t length) {
 
     if (length) {
         randomString = malloc(sizeof(char) * (length +1));
-
         if (randomString) {
             for (int n = 0;n < length;n++) {
                 int key = rand() % (int)(sizeof(charset) -1);
@@ -265,7 +264,7 @@ int main() {
     int i;
     celkovy_pocet = 0;
     clock_t start = clock();
-    root = insert(root,"ada");
+    /*root = insert(root,"ada");
     root = insert(root,"bed");
     root = insert(root,"adg");
     root = insert(root,"afg");
@@ -281,7 +280,8 @@ int main() {
     root = insert(root,"ccc");
     root = insert(root,"ccd");
     root = delete(root,"bhg");
-    while(celkovy_pocet!=5000){
+     */
+    while(celkovy_pocet!=10000){
         char*data;
         data = randstring(10);
         if(search(root,data)==0){
