@@ -17,7 +17,14 @@ typedef struct person{
 }PERSON;
 
 
-
+int maximum(int a, int b){
+    if(a>b){
+        return a;
+    }
+    else{
+        return b;
+    }
+}
 
 int hash(unsigned char *str)
 {
@@ -33,65 +40,57 @@ int hash(unsigned char *str)
 
 
 int height_of_tree(PERSON*A,int balance){
-    int lh,rh;
-    if(A==NULL)
+    int leftside;
+    int rightside;
+    if(A==NULL){
         return(0);
+    }
+    if (A->right == NULL){
+        rightside = 0;
+    }
+    else{
+        rightside = 1 + A->right->height;
+    }
 
-    if(A->left==NULL)
-        lh=0;
-    else
-        lh=1+A->left->height;
+    if (A->left == NULL){
+        leftside = 0;
+    }
+    else{
+        leftside = 1 + A->left->height;
+    }
 
-    if(A->right==NULL)
-        rh=0;
-    else
-        rh=1+A->right->height;
+    if (balance == 1){             // potrebujem Balance factor
+        return leftside - rightside;
+    }
 
-    if(lh>rh)
-        return(lh);
-
-    return(rh);
+    return maximum(leftside,rightside);
 
 }
 
 int balance_factor(PERSON*A){
-    int lh,rh;
-    if(A==NULL)
-        return(0);
-
-    if(A->left==NULL)
-        lh=0;
-    else
-        lh=1+A->left->height;
-
-    if(A->right==NULL)
-        rh=0;
-    else
-        rh=1+A->right->height;
-
-    return(lh-rh);
+    height_of_tree(A,1);
 }
 
 int search(PERSON *A,char*data){
-    if (A == NULL){
+    if (A == NULL){                         // presiel sa strom ale nenasiel sa prvok
         return 0;
     }
 
-    if (hash(data) == hash(A->name)){
+    if (strcmp(data,A->name) == 0){         // Nasiel sa prvok
         return 1;
     }
 
-    if (hash(data) > hash(A->name)){
+    if (strcmp(data,A->name) > 0){          // postupuj do prava
         search(A->right,data);
     }
-    else if(hash(data) < hash(A->name)){
+    else if(strcmp(data,A->name) < 0){      // postupuj do ľava
         search(A->left,data);
     }
 
 }
 
 PERSON* rotation_left(PERSON*A){
-    PERSON *rot_tree;
+    PERSON *rot_tree;               // pomocná premenná -> na kon
     rot_tree = A->right;
     A->right = rot_tree->left;
     rot_tree->left = A;
@@ -110,65 +109,57 @@ PERSON* rotation_right(PERSON *A){
     return rot_tree;
 }
 
-PERSON* delete(PERSON*A,char*key){
-    PERSON*temp;
+PERSON* delete(PERSON*A,char*key) {
+    PERSON *temp;
 
-    if (A == NULL){
+    if (A == NULL) {
         return NULL;
     }
 
-    if(strcmp(key,A->name)>0){                      // idem doprava od node
-        A->right = delete(A->right,key);            // rekurzia
-        if (balance_factor(A) > 1){                 // za každým vnorením skontrolujem BF
-            if(balance_factor(A->left) > 1){
+    if (strcmp(key, A->name) > 0) {                      // idem doprava od node
+        A->right = delete(A->right, key);            // rekurzia
+        if (balance_factor(A) > 1) {                 // za každým vnorením skontrolujem BF
+            if (balance_factor(A->left) >= 0) {
                 A = rotation_right(A);              //Rotácia LL
-            }
-            else{
+            } else {
                 A->left = rotation_left(A->left);   //Rotácia LR
                 A = rotation_right(A);
             }
         }
-    }
-    else if(strcmp(key,A->name)<0){                     // key je mensí než key v danom node , postupujem dolava
+    } else if (strcmp(key, A->name) < 0) {                     // key je mensí než key v danom node , postupujem dolava
 
-        A->left = delete(A->left,key);                  // reukurzivne volam funkciu delete ale už s ľavým child
-        if (balance_factor(A) < -1){                     //
-            if(balance_factor(A->right) < -1){
+        A->left = delete(A->left, key);                  // reukurzivne volam funkciu delete ale už s ľavým child
+        if (balance_factor(A) < -1) {                     //
+            if (balance_factor(A->right) <=0) {
                 A = rotation_left(A);               //Prípad RR
-            }
-            else{
+            } else {
                 A->right = rotation_right(A->right);    //Prípad RL
                 A = rotation_left(A);
             }
         }
     }
+    else{
+        if (A->right != NULL) {
 
-
-    else {                          // Našiel sa záznam ktorý chcem odtrániť                   // A - > node ktorý chcem odtrániť
-        if(A->right!=NULL){
-
-            temp=A->right;
-            while(A->left!= NULL){
-                temp=temp->left;
+            temp = A->left;
+            PERSON *temp_pred = A;
+            while (temp->right != NULL) {
+                temp_pred = temp;
+                temp = temp->right;
             }
-            A->name=temp->name;
-            A->age = temp->age;
-            A->right=delete(A->right,temp->name);
-
-            if(balance_factor(A)==2)
-                if(balance_factor(A->left)>=0)
-                    A = rotation_right(A);              //Rotácia LL
-                else
-                    A->left = rotation_left(A->left);   //Rotácia LR
-                     A = rotation_right(A);
-				}
-        else{
-            return(A->left);
+            A->name = temp->name;               //
+            A->age = temp->age;                 //
+            A->left = delete(A->left,temp->name);
+        }
+        else {
+            return (A->left);
         }
 
-    A->height=height_of_tree(A,0);
-    return(A);
+
     }
+    A->height=height_of_tree(A,0);              // Updatni výšku daného root-u
+    return(A);
+
 }
 
 PERSON* make_new_node(char* data){
@@ -200,10 +191,10 @@ PERSON * insert(PERSON* A,char* data){
 
     else{
 
-        if(hash(data) >= hash(A->name)){               // postupujem doprava
+        if(strcmp(data,A->name)>=0){               // postupujem doprava
             A->right = insert(A->right,data);       //pravé dieťa rootu. posielam do funkcie insert
             if (balance_factor(A) < -1){            // po rekurzii skontrolujem či je BF v rámci normyx
-                if(hash(data) >= hash(A->name)){
+                if(strcmp(data,A->right->name)>=0){
                     A = rotation_left(A);               // Prípad RR  -> rotácia vľavo
                 }
                 else{
@@ -213,10 +204,10 @@ PERSON * insert(PERSON* A,char* data){
 
             }
         }
-        else if(hash(data) < hash(A->name)){
+        else if(strcmp(data,A->name)<0){
             A->left = insert(A->left,data);
             if(balance_factor(A) > 1 ){
-                if(hash(data) < hash(A->name)){
+                if(strcmp(data,A->left->name)<0){
                     A = rotation_right(A);          //Prípad LL
                 }
                 else{
@@ -235,15 +226,14 @@ PERSON * insert(PERSON* A,char* data){
 
 char *randstring(size_t length) {
 
-    static char charset[] = "abcdefghijasdfbathzsrbgdfvrgetzutdzhgdf.ô§úpoiugfhjtuklmnopqrstuvwxyz";
+    static char charset[] = "abcdefghijklmnopqrstuvwxyz";
     char *randomString = NULL;
 
     if (length) {
         randomString = malloc(sizeof(char) * (length +1));
-        srand(100);
-        if (randomString) {
-            for (int n = 1;n <= length;n++) {
 
+        if (randomString) {
+            for (int n = 0;n < length;n++) {
                 int key = rand() % (int)(sizeof(charset) -1);
                 randomString[n] = charset[key];
             }
@@ -258,10 +248,8 @@ char *randstring(size_t length) {
 
 
 
-
-
 int main() {
-    char c[1000];
+
     FILE *fptr;
     if ((fptr = fopen("C:\\Users\\ACER\\CLionProjects\\DSA_2\\mena.txt", "r")) == NULL) {
         printf("Error! opening file");
@@ -274,14 +262,33 @@ int main() {
     int i;
     celkovy_pocet = 0;
     clock_t start = clock();
+    root = insert(root,"ada");
+    root = insert(root,"bed");
+    root = insert(root,"adg");
+    root = insert(root,"afg");
+    root = insert(root,"bgh");
+    root = insert(root,"bhg");
+    root = insert(root,"kli");
+    root = insert(root,"oop");
+    root = insert(root,"dsa");
+    root = insert(root,"ckp");
 
 
-    while(fgets(c, 1000, fptr)!=NULL){
-        strcpy(meno,c);
+    root = delete(root,"dsa");
+    root = insert(root,"ccc");
+    root = insert(root,"ccd");
+    root = delete(root,"bhg");
+    while(celkovy_pocet!=5000){
         char*data;
         data = randstring(10);
-        root = insert(root,meno);
-        celkovy_pocet++;
+        if(search(root,data)==0){
+            root = insert(root,data);
+            celkovy_pocet++;
+        }
+        else{
+
+        }
+
     }
 
 
