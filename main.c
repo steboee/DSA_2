@@ -3,319 +3,58 @@
 #include <stdio.h>
 #include <time.h>
 #include <string.h>
-#include <limits.h>
-
-int celkovy_pocet;
+#define MAX_SIZE 500
 
 
-typedef struct person{
-    char* name;        //indentifikátor záznamu
-    int age;
-    struct person* left;
-    struct person* right;
-    int height;
-}PERSON;
-
-
-int maximum(int a, int b){
-    if(a>b){
-        return a;
-    }
-    else{
-        return b;
-    }
-}
-
-int hash(unsigned char *str)
-{
-    int hash = 5381;
-    int c;
-
-    while (c = *str++)
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
-
-    return hash;
-}
+typedef struct data{
+    char* name;
+    int key;
+}DATA;
 
 
 
-int height_of_tree(PERSON*A,int balance){
-    int leftside;
-    int rightside;
-    if(A==NULL){
-        return(0);
-    }
-    if (A->right == NULL){
-        rightside = 0;
-    }
-    else{
-        rightside = 1 + A->right->height;
-    }
 
-    if (A->left == NULL){
-        leftside = 0;
-    }
-    else{
-        leftside = 1 + A->left->height;
-    }
-
-    if (balance == 1){             // potrebujem Balance factor
-        return leftside - rightside;
-    }
-
-    return maximum(leftside,rightside);
-
-}
-
-int balance_factor(PERSON*A){
-    height_of_tree(A,1);
-}
-
-int search(PERSON *A,char*data){
-    if (A == NULL){                         // presiel sa strom ale nenasiel sa prvok
-        return 0;
-    }
-
-    if (strcmp(data,A->name) == 0){         // Nasiel sa prvok
-        return 1;
-    }
-
-    if (strcmp(data,A->name) > 0){          // postupuj do prava
-        search(A->right,data);
-    }
-    else if(strcmp(data,A->name) < 0){      // postupuj do ľava
-        search(A->left,data);
-    }
-
-}
-
-PERSON* rotation_left(PERSON*A){
-    PERSON *rot_tree;               // pomocná premenná -> na kon
-    rot_tree = A->right;
-    A->right = rot_tree->left;
-    rot_tree->left = A;
-    rot_tree->height = height_of_tree(rot_tree,0);
-    A->height = height_of_tree(A,0);
-    return rot_tree;
-}
-
-PERSON* rotation_right(PERSON *A){
-    PERSON *rot_tree;
-    rot_tree = A->left;
-    A->left = rot_tree->right;
-    rot_tree->right = A;
-    rot_tree->height = height_of_tree(rot_tree,0);
-    A->height = height_of_tree(A,0);
-    return rot_tree;
-}
-
-PERSON* delete(PERSON*A,char*key) {
-    PERSON *temp;
-
-    if (A == NULL) {
-        return NULL;
-    }
-
-    if (strcmp(key, A->name) > 0) {                      // idem doprava od node
-        A->right = delete(A->right, key);            // rekurzia
-        if (balance_factor(A) > 1) {                 // za každým vnorením skontrolujem BF
-            if (balance_factor(A->left) >= 0) {
-                A = rotation_right(A);              //Rotácia LL
-            } else {
-                A->left = rotation_left(A->left);   //Rotácia LR
-                A = rotation_right(A);
-            }
+int hash(char*meno){
+    int len = strlen(meno);
+    int h=0;
+    for (int i = 0; i< len;i++){
+        if(h>=500){
+            h = h/500;
         }
-    } else if (strcmp(key, A->name) < 0) {                     // key je mensí než key v danom node , postupujem dolava
-
-        A->left = delete(A->left, key);                  // reukurzivne volam funkciu delete ale už s ľavým child
-        if (balance_factor(A) < -1) {                     //
-            if (balance_factor(A->right) <=0) {
-                A = rotation_left(A);               //Prípad RR
-            } else {
-                A->right = rotation_right(A->right);    //Prípad RL
-                A = rotation_left(A);
-            }
+        else{
+            h = 31*h + meno[i];
         }
     }
-    else{
-        if (A->right != NULL) {
-
-            temp = A->left;
-            PERSON *temp_pred = A;
-            while (temp->right != NULL) {
-                temp_pred = temp;
-                temp = temp->right;
-            }
-            A->name = temp->name;               //
-            A->age = temp->age;                 //
-            A->left = delete(A->left,temp->name);
-        }
-        else {
-            free(A);
-            A->right = NULL;
-            A->left = NULL;
-            return (A->left);
-        }
-
-
+    if(h>=500){
+        h = h/500;
     }
-    A->height=height_of_tree(A,0);              // Updatni výšku daného root-u
-    return(A);
+    return h;
 
-}
-
-PERSON* make_new_node(char* data){
-    PERSON* new = (PERSON*)malloc(sizeof(PERSON));
-    new->name = data;
-    new->left = NULL;
-    new->right = NULL;
-    new->height = 0;
-
-
-    time_t seconds;             // náhodný generátor
-    seconds = time(NULL);
-    srand(seconds);
-    new->age = (rand() % (99 + 1 - 1)) + 1;
-
-
-    return new;
-
-
-}
-
-PERSON * insert(PERSON* A,char* data){
-
-    if (A == NULL){            // úplne prvé dáta ...
-        A = make_new_node(data);
-        return A;
-    }
-
-    else{
-
-        if(strcmp(data,A->name)>=0){               // postupujem doprava
-            A->right = insert(A->right,data);       //pravé dieťa rootu. posielam do funkcie insert
-            if (balance_factor(A) < -1){            // po rekurzii skontrolujem či je BF v rámci normyx
-                if(strcmp(data,A->right->name)>=0){
-                    A = rotation_left(A);               // Prípad RR  -> rotácia vľavo
-                }
-                else{
-                    A->right = rotation_right(A->right);    // Prípad RL
-                    A = rotation_left(A);
-                }
-
-            }
-        }
-        else if(strcmp(data,A->name)<0){
-            A->left = insert(A->left,data);
-            if(balance_factor(A) > 1 ){
-                if(strcmp(data,A->left->name)<0){
-                    A = rotation_right(A);          //Prípad LL
-                }
-                else{
-                    A->left = rotation_left(A->left);       //Prípad LR
-                    A = rotation_right(A);
-                }
-            }
-        }
-
-    }
-    A->height=height_of_tree(A,0);
-
-    //printf("inserted string : %s\n",A->name);
-    return A;
-}
-
-char *randstring(size_t length,int x) {
-
-    static char charset[] = "abcdefghijklmnopqrstuvwxyz";
-    char *randomString = NULL;
-    srand(x);
-    if (length) {
-        randomString = malloc(sizeof(char) * (length +1));
-        if (randomString) {
-            for (int n = 0;n < length;n++) {
-                int key = rand() % (int)(sizeof(charset) -1);
-                randomString[n] = charset[key];
-            }
-
-            randomString[length] = '\0';
-        }
-    }
-
-    return randomString;
 }
 
 
 
+void insert(char** A,char*s){
+    DATA* new;
+    new = (DATA*)malloc(sizeof(DATA));
+    new->name = s;
+    new->key = hash(s);
+    printf("%s %d\n",s,new->key);
 
-int main() {
-
-
-    char*meno;
-
-    PERSON* root=NULL;
-    int i;
-    celkovy_pocet = 0;
-    clock_t start = clock();
-    /*root = insert(root,"ada");
-    root = insert(root,"bed");
-    root = insert(root,"adg");
-    root = insert(root,"afg");
-    root = insert(root,"bgh");
-    root = insert(root,"bhg");
-    root = insert(root,"kli");
-    root = insert(root,"oop");
-    root = insert(root,"dsa");
-    root = insert(root,"ckp");
-
-
-    root = delete(root,"dsa");
-    root = insert(root,"ccc");
-    root = insert(root,"ccd");
-    root = delete(root,"bhg");
-     */
-    int data=1;
-    while(celkovy_pocet!=1000000){
-
-        data = randstring(5,celkovy_pocet);
-        root = insert(root,data);
-        celkovy_pocet++;
+}
 
 
 
-    }
+int main(){
 
 
 
+    char* POLE[MAX_SIZE];
 
-    clock_t stop = clock();
-    double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-    printf("INSERTED 1 000 000 random strings:\n");
-    printf("Time elapsed : %.f ms\n", elapsed);
-    printf("Height of tree: %d\n", root->height);
+    insert(&POLE,"Ctibor");
+    insert(&POLE,"Patricia");
+    insert(&POLE,"Matej");
+    insert(&POLE,"Eliska");
 
-
-    clock_t start2 = clock();
-    while(celkovy_pocet!=0){
-        data = randstring(5,celkovy_pocet);
-        search(root,data);
-        celkovy_pocet--;
-    }
-    clock_t stop2 = clock();
-    double elapsed2 = (double)(stop2 - start2) * 1000.0 / CLOCKS_PER_SEC;
-    printf("SEARCHED for 1 000 000 random strings:\n");
-    printf("Time elapsed : %.f ms\n", elapsed2);
-
-
-
-
-
-
-
-
-
-
-
-    return 0;
+    printf("Hello world\n");
 }
