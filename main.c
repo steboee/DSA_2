@@ -11,6 +11,12 @@ typedef struct data{
     int key;
 }DATA;
 
+typedef struct table{
+    DATA** datab;
+    int size;
+    int count;
+}TABLE;
+
 
 
 
@@ -43,13 +49,22 @@ void insert(char** A,char*s){
 
 }
 
+TABLE* create_table(int size) {
+    // Creates a new HashTable
+    TABLE* table = (TABLE*) malloc (sizeof(TABLE));
+    table->size = size;
+    table->count = 0;
+    table->datab = (DATA**) calloc (table->size, sizeof(DATA*));
+    for (int i=0; i<table->size; i++)
+        table->datab[i] = NULL;
+
+    return table;
+}
 
 
 int main(){
+    create_table(500);
 
-
-
-    char* POLE[MAX_SIZE];
 
     insert(&POLE,"Ctibor");
     insert(&POLE,"Patricia");
