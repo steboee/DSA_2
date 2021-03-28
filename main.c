@@ -186,7 +186,6 @@ PERSON* make_new_node(char* data){
 
 PERSON * insert(PERSON* A,char* data){
 
-
     if (A == NULL){            // úplne prvé dáta ...
         A = make_new_node(data);
         return A;
@@ -227,11 +226,11 @@ PERSON * insert(PERSON* A,char* data){
     return A;
 }
 
-char *randstring(size_t length) {
+char *randstring(size_t length,int x) {
 
     static char charset[] = "abcdefghijklmnopqrstuvwxyz";
     char *randomString = NULL;
-
+    srand(x);
     if (length) {
         randomString = malloc(sizeof(char) * (length +1));
         if (randomString) {
@@ -252,11 +251,6 @@ char *randstring(size_t length) {
 
 int main() {
 
-    FILE *fptr;
-    if ((fptr = fopen("C:\\Users\\ACER\\CLionProjects\\DSA_2\\mena.txt", "r")) == NULL) {
-        printf("Error! opening file");
-        exit(1);
-    }
 
     char*meno;
 
@@ -281,26 +275,37 @@ int main() {
     root = insert(root,"ccd");
     root = delete(root,"bhg");
      */
-    while(celkovy_pocet!=10000){
-        char*data;
-        data = randstring(10);
-        if(search(root,data)==0){
-            root = insert(root,data);
-            celkovy_pocet++;
-        }
-        else{
+    int data=1;
+    while(celkovy_pocet!=1000000){
 
-        }
+        data = randstring(5,celkovy_pocet);
+        root = insert(root,data);
+        celkovy_pocet++;
+
+
 
     }
 
 
 
+
     clock_t stop = clock();
     double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-    printf("Time elapsed in ms: %f\n", elapsed);
-    printf("N: %d\n",celkovy_pocet);
+    printf("INSERTED 1 000 000 random strings:\n");
+    printf("Time elapsed : %.f ms\n", elapsed);
     printf("Height of tree: %d\n", root->height);
+
+
+    clock_t start2 = clock();
+    while(celkovy_pocet!=0){
+        data = randstring(5,celkovy_pocet);
+        search(root,data);
+        celkovy_pocet--;
+    }
+    clock_t stop2 = clock();
+    double elapsed2 = (double)(stop2 - start2) * 1000.0 / CLOCKS_PER_SEC;
+    printf("SEARCHED for 1 000 000 random strings:\n");
+    printf("Time elapsed : %.f ms\n", elapsed2);
 
 
 
