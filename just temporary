@@ -1,0 +1,113 @@
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <time.h>
+#include <string.h>
+#define MAX_SIZE 10000
+
+
+typedef struct data{
+    char* name;
+    int key;
+    struct data *next;
+}DATA;
+
+typedef struct table{
+    struct data** data_t;
+    int size;
+    int count;
+}TABLE;
+
+
+
+
+
+
+int hash(char*meno){
+    int len = strlen(meno);
+    int h=0;
+    for (int i = 0; i< len;i++){
+        h = 31*h + meno[i];
+        while(h>=MAX_SIZE){
+            h = h - MAX_SIZE;
+        }
+    }
+
+
+    return h;
+
+}
+DATA* create_item(int key, char* value) {
+    DATA* item = (DATA*) malloc (sizeof(DATA));
+    item->key = (int) malloc(sizeof(int));
+    item->name = (char*) malloc (strlen(value) + 1);
+    item->key = key;
+    strcpy(item->name, value);
+    return item;
+}
+
+
+void insert(TABLE *A, char*s){
+    int h = hash(s);
+    DATA* item = create_item(h,s);
+
+    DATA* current_item = A->data_t[h];
+    while(current_item != NULL){
+        A->data_t[h] = A->data_t[h]->next;
+    }
+
+
+    if (current_item == NULL) {
+        if (A->count == A->size) {
+            printf("Insert Error: Hash Table is full\n");
+            return;
+        }
+        A->data_t[h] = item;
+        A->count++;
+    }
+}
+
+TABLE* create_table(int size) {
+    // Creates a new HashTable
+    TABLE* table = (TABLE*) malloc (sizeof(TABLE));
+    table->size = size;
+    table->count = 0;
+    table->data_t = (DATA**) calloc (table->size, sizeof(DATA*));
+    for (int i=0; i<table->size; i++)
+        table->data_t[i] = NULL;
+
+    return table;
+}
+
+
+
+void search(TABLE *A , char* s){
+    int h = hash(s);
+
+    if (strcmp(A->data_t[h]->name,s) == 0 ){
+        printf("ANO");
+    }
+    else{
+        printf("NIE");
+    }
+
+}
+
+
+
+int main(){
+    TABLE* pole;
+    pole = create_table(MAX_SIZE);
+
+
+    insert(pole,"Ctibor");
+    insert(pole,"Ctibor");
+    insert(pole,"Ctibor");
+    insert(pole,"Patricia");
+    insert(pole,"Matej");
+    insert(pole,"Eliska");
+
+    search(pole,"Eliska");
+
+    printf("Hello world\n");
+}
