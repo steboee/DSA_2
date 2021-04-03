@@ -226,11 +226,13 @@ PERSON * insert(PERSON* A,char* data){
     return A;
 }
 
-char *randstring(size_t length,int x) {
+char *randstring(size_t length,int x) {                                 // Funkcia ktorá generuje náhodné stringy, používam ju v každej implementácií aby boli výsledky viac relevantné
 
     static char charset[] = "abcdefghijklmnopqrstuvwxyz";
     char *randomString = NULL;
-    srand(x);
+    time_t seconds;
+    seconds = time(NULL);
+    srand(x*seconds);
     if (length) {
         randomString = malloc(sizeof(char) * (length +1));
         if (randomString) {
@@ -238,11 +240,9 @@ char *randstring(size_t length,int x) {
                 int key = rand() % (int)(sizeof(charset) -1);
                 randomString[n] = charset[key];
             }
-
             randomString[length] = '\0';
         }
     }
-
     return randomString;
 }
 
@@ -252,12 +252,12 @@ char *randstring(size_t length,int x) {
 int main() {
 
 
-    char*meno;
+
 
     PERSON* root=NULL;
     int i;
     celkovy_pocet = 0;
-    clock_t start = clock();
+
     /*root = insert(root,"ada");
     root = insert(root,"bed");
     root = insert(root,"adg");
@@ -275,11 +275,15 @@ int main() {
     root = insert(root,"ccd");
     root = delete(root,"bhg");
      */
-    int data=1;
-    while(celkovy_pocet!=1000000){
+    char* data;
+    double elapsed = 0;
+    while(celkovy_pocet!=100000){
 
         data = randstring(5,celkovy_pocet);
+        clock_t start = clock();
         root = insert(root,data);
+        clock_t stop = clock();
+        elapsed = elapsed + (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
         celkovy_pocet++;
 
 
@@ -287,21 +291,24 @@ int main() {
     }
 
 
-    clock_t stop = clock();
-    double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
+
+
     printf("INSERTED 1 000 000 random strings:\n");
     printf("Time elapsed : %.f ms\n", elapsed);
     printf("Height of tree: %d\n", root->height);
 
 
-    clock_t start2 = clock();
+    double elapsed2= 0;
     while(celkovy_pocet!=0){
         data = randstring(5,celkovy_pocet);
+        clock_t start2 = clock();
         search(root,data);
+        clock_t stop2 = clock();
+        elapsed2 = elapsed2 + (double)(stop2 - start2) * 1000.0 / CLOCKS_PER_SEC;
         celkovy_pocet--;
     }
-    clock_t stop2 = clock();
-    double elapsed2 = (double)(stop2 - start2) * 1000.0 / CLOCKS_PER_SEC;
+
+
     printf("SEARCHED for 1 000 000 random strings:\n");
     printf("Time elapsed : %.f ms\n", elapsed2);
 
