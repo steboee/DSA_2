@@ -14,15 +14,16 @@ typedef struct person{
 
 
 typedef struct table{
-    int size;
-    int count;
-    struct person** data;
+    struct person* data;
 }TABLE;
 
 
-int size;
-int max;
-int count;
+
+
+TABLE* table;
+int max=5;
+int count = 0;
+
 
 
 
@@ -32,38 +33,61 @@ int hash(char*meno){
     int len = strlen(meno);
     int h=0;
     for (int i = 0; i< len;i++){
-        h = (31*h + meno[i] ) % MAX_SIZE ;
+        h = (31*h + meno[i] ) % max ;
     }
-
 
     return h;
 
 }
 
 
-void init_table(PERSON**table,TABLE*start){
-    for (int i =0;i< start->size ;i++){
-        table[i] = NULL;
+void init_table(){
+    for (int i =0;i< max ;i++){
+        (table+i)->data = NULL;
     }
 }
+int insert(PERSON*p){
+    if (p == NULL){
+        return 0;
+    }
+    int index = hash(p->name);
+    p->next = table[index].data;
+    table[index].data = p;
+    count++;
+    return 1;
+}
 
-void resize_table(TABLE**old_tab,PERSON**old_pers){
-    TABLE*new_tab;
-    PERSON* new_pers [(*old_tab)->size*2];
-    new_tab = malloc(sizeof(TABLE));
-    new_tab->size = (*old_tab)->size*2;
-    new_tab->count =0;
-    new_tab->data = new_pers;
-    init_table(new_pers,new_tab);
-    old_tab =  &new_tab;
-    old_pers =  new_pers;
+void resize_table(){
+    TABLE *temp = table;
+    int old_max = max;
+    count =0;
+    max = max*2;
 
+
+    table = (TABLE*)malloc(max*sizeof(TABLE));
+    init_table();
+    for (int i =0;i<old_max;i++){
+        PERSON*a = (PERSON*) temp[i].data;
+        if (a == NULL){
+            continue;
+        }
+        else{
+            while(a != NULL){
+                PERSON*a_t;
+                a_t = a->next;
+                insert(a);
+                a = a_t;
+            }
+        }
+    }
+    free(temp);
+    temp = NULL;
 }
 
 
-int load_factor(TABLE*a,PERSON*b){
-    int bucket = a->size;
-    int data = a->count;
+int load_factor(){
+    int bucket = max;
+    int data = count;
     double alpha = (double)data/(double)bucket;
     if (alpha > 0.50){
         return 1;
@@ -72,28 +96,18 @@ int load_factor(TABLE*a,PERSON*b){
 }
 
 
-int insert(PERSON *p,TABLE*start,PERSON**table){
-    if (p == NULL){
-        return 0;
-    }
-    int index = hash(p->name);
-    p->next = table[index];
-    table[index] = p;
-    start->count++;
-
-    return 1;
-}
 
 
-void print_table(PERSON **table){
+
+void print_table(){
     printf("Start\n");
-    for (int i =0;i<MAX_SIZE;i++){
-        if (table[i] == NULL){
+    for (int i =0;i<max;i++){
+        if (table[i].data == NULL){
             printf("\t%i\t---\n",i);
         }
         else{
             printf("\t%i\t ",i);
-            PERSON *temp = table[i];
+            PERSON *temp = table[i].data;
             while (temp != NULL){
                 printf("%s - ",temp->name);
                 temp = temp->next;
@@ -130,28 +144,26 @@ PERSON * create_data(int i){
     PERSON *data = malloc(sizeof(PERSON));
     data->name = randstring(10,i);
     data->age = 20;
+    data->next = NULL;
     return data;
 }
 
 
 int main(){
-    TABLE *start = malloc(sizeof(TABLE));
-    PERSON* s;
-    s = (PERSON*)malloc(100*sizeof(PERSON));
-    start->size = 100;
-    start->count =0;
-    start->data = &s;
-    init_table(s,start);
-    print_table(s);
-
+    table = malloc(max*sizeof(PERSON));
+    init_table();
+    print_table();
     PERSON *u;
-    for (int i =0;i<60;i++){
+    for (int i =0;i<10;i++){
         u = create_data(i);
-        insert(u, start, (PERSON **) &s);
-        if(load_factor(start, s)){
-            resize_table(&start,(PERSON **) &s);
+        insert(u);
+        if(load_factor()){
+            print_table();
+            printf("RESIZE\n");
+            resize_table();
+            print_table();
         }
     }
 
-    print_table(s);
+    print_table();
 }
