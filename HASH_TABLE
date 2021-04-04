@@ -134,7 +134,7 @@ char *randstring(size_t length,int x) {                                 // Funkc
 
 PERSON * create_data(int i){                                        // funkcia vytvorí nové dáta a meno je na základe funkcie na random generáciu stringu
     PERSON *data = malloc(sizeof(PERSON));
-    data->name = randstring(10,i);
+    data->name = randstring(5,i);
     data->age = 20;                                                // vek som nemenil randomne aby sa program zbytočne nezatažoval..
     data->next = NULL;
     return data;
@@ -181,7 +181,7 @@ void delete_table(){                                    // funkcia vymaže celú
 
 
 int main(){
-    int items = 10000000;                                // pocet dát ktoré chcem vložiť do hashovacej tabulky
+    int items = 2000000;                                // pocet dát ktoré chcem vložiť do hashovacej tabulky
     table = malloc(max*sizeof(PERSON));                 // alokujem prvotnú hashovaciu tabulku o velkosti max ( globalńa premenná ) riadok 23
     init_table();                                       // inicializujem tabulku ( nastavim všetky buckety na NULL
     PERSON *u;

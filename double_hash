@@ -1,0 +1,233 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include <string.h>
+#pragma GCC optimize("01")
+
+
+typedef struct data{
+    char*name;
+}DATA;
+
+
+typedef struct hashTable{
+    int countOfNumb;
+    int maxSize;
+    int primeSmall;
+    struct data* newArr;
+}HASHTABLE;
+
+void insertDoubleHash(HASHTABLE** paTable, char* paVal);
+void printDoubleHash(HASHTABLE* paTable);
+char** searchDoubleHash(HASHTABLE** paTable, char* paVal);
+void deleteDoubleHash(HASHTABLE** paTable);
+//funkcia zisti ci je cislo prvocislo
+int isPrime(int paNum) {
+    int flag = 1;
+    for (int i = 2; i <= sqrt(paNum); i++) {
+        if (paNum % i == 0) {
+            flag = 0;
+            break;
+        }
+    }
+    return flag;
+}
+
+//vytvori hash tabulku
+HASHTABLE* createHash(HASHTABLE* paTable) {
+    paTable = (HASHTABLE*) malloc(sizeof(HASHTABLE));
+    paTable->countOfNumb = 0;
+    paTable->maxSize = 11;
+    paTable->primeSmall = 7;
+    paTable->newArr = (DATA*) malloc(sizeof(DATA) * paTable->maxSize);
+    for (int i = 0; i < paTable->maxSize; i++) paTable->newArr[i].name = NULL;
+    return paTable;
+}
+
+int hash(HASHTABLE *paTable ,char *meno){                // hash funckia , dostane string --> vráti index
+    int len = (int)strlen(meno);
+    int h=0;
+    for (int i = 0; i< len;i++){      // prejde celým stringom
+        h = (31*h + meno[i] ) % paTable->maxSize ;
+    }
+
+    return h;
+
+}
+
+
+//prva hash funckia vrati cislo mod velkost pola
+int hashFunctionFirst(HASHTABLE* paTable, char* paKey) {
+    int Key = hash(paTable,paKey);
+    return abs(Key) % paTable->maxSize;
+}
+
+//funkcia nastavi novu velkost pola a taktiez prvocislo, ktore sa pouziva pri druhej hash funckii
+int newSizeAndPrime(HASHTABLE* paTable) {
+    paTable->maxSize *= 2;
+    int i = paTable->maxSize-1;
+    while (!isPrime(i)) {
+        i--;
+    }
+    paTable->primeSmall = i;
+    i = paTable->maxSize+1;
+    while (!isPrime(i)) {
+        i++;
+    }
+    paTable->maxSize = i;
+    return paTable->maxSize;
+}
+
+//druha hash funkcia
+int hashFunctionSecond(HASHTABLE* paTable, int paKey) {
+
+
+    return paTable->primeSmall - (abs(paKey) % paTable->primeSmall);
+}
+
+//funkcia na zvacsenie tabulky
+void expandTable(HASHTABLE** paTable) {
+    int old = (*paTable)->maxSize;
+    (*paTable)->maxSize = newSizeAndPrime(*paTable);
+    DATA* oldArr = (*paTable)->newArr;
+    (*paTable)->newArr = (DATA*) malloc(sizeof(DATA) * (*paTable)->maxSize);
+    if ((*paTable)->newArr == NULL) {
+        printf("Malo pamate");
+        return;
+    }
+    for (int i = 0; i < (*paTable)->maxSize; i++){
+        (*paTable)->newArr[i].name = NULL;
+    }
+    (*paTable)->countOfNumb=0;
+    //premiestni zo stareho pola do noveho
+    for (int i = 0; i < old/2; i++)
+    {
+        if((oldArr[i].name != NULL))
+        {
+            char* num = oldArr[i].name;
+            insertDoubleHash(paTable, num);
+        }
+    }
+    free(oldArr);
+}
+
+//vlozi prvok do tabulky
+void insertDoubleHash(HASHTABLE** paTable, char* paVal) {
+    if ((*paTable) == NULL)
+        *paTable = createHash(*paTable);
+    int index = hashFunctionFirst((*paTable), paVal);
+    if ((*paTable)->newArr[index].name == paVal) return;
+
+    if ((*paTable)->newArr[index].name != NULL) {
+        //nasla sa kolizia
+        int hash1 = hashFunctionFirst((*paTable), paVal);
+        int hash2 = hashFunctionSecond((*paTable),paVal);
+        int i = 1;
+        while (1) {
+            index = (hash1 + (i++)*hash2 + i) % ((*paTable)->maxSize);
+            if ((*paTable)->newArr[index].name == paVal) return;
+            if ((*paTable)->newArr[index].name == NULL) break;
+        }
+    }
+    //vloz prvok
+    (*paTable)->newArr[index].name = paVal;
+    (*paTable)->countOfNumb++;
+    //otestuj ci netreba zvacsit
+    if (((double)(*paTable)->countOfNumb) / (*paTable)->maxSize >= 0.5) expandTable(paTable);
+}
+
+
+
+
+
+
+
+
+
+//vyhlada prvok v tabulke
+char** searchDoubleHash(HASHTABLE** paTable, char* paVal) {
+    if ((*paTable) == NULL)
+        return NULL;
+    int j = 0;
+    int i = hashFunctionFirst((*paTable), paVal);
+    if ((*paTable)->newArr[i].name == paVal) return &((*paTable)->newArr[i].name);
+    int valHash = hashFunctionSecond((*paTable),i);
+    while ((*paTable)->newArr[i].name != NULL) {
+        //prvok sa nenasiel na indexe, pokracuj v hladani
+        i = (i + valHash) % (*paTable)->maxSize;
+        if ((*paTable)->newArr[i].name == paVal) return &((*paTable)->newArr[i].name);
+        if (j++ > (*paTable)->maxSize) return NULL;
+    }
+}
+
+//vymaze tabulku
+void deleteDoubleHash(HASHTABLE** paTable) {
+    free((*paTable)->newArr);
+    free((*paTable));
+    (*paTable) = NULL;
+}
+
+//vypise obsah tabulky
+
+void printDoubleHash(HASHTABLE* paTable) {
+    printf("Velkost: %d\n", paTable->maxSize);
+    for (int i = 0; i < paTable->maxSize; i++) {
+        printf("%d.  %s \n",i, (paTable->newArr[i].name));
+    }
+}
+
+
+
+char *randstring(size_t length,int x) {                                 // Funkcia ktorá generuje náhodné stringy, používam ju v každej implementácií aby boli výsledky viac relevantné
+
+    static char charset[] = "abcdefghijklmnopqrstuvwxyz";
+    char *randomString = NULL;
+    time_t seconds;
+    seconds = time(NULL);
+    srand(x+1*seconds);
+    if (length) {
+        randomString = malloc(sizeof(char) * (length +1));
+        if (randomString) {
+            for (int n = 0;n < length;n++) {
+                int key = rand() % (int)(sizeof(charset) -1);
+                randomString[n] = charset[key];
+            }
+            randomString[length] = '\0';
+        }
+    }
+    return randomString;
+}
+
+int main(){
+    HASHTABLE *rootMyHash = NULL;
+    int* searchHS = NULL;
+    double temp = 0;
+    rootMyHash  = createHash(rootMyHash);
+    //TESTOVAC na INSERT//
+    int j=0;
+    while ( rootMyHash->countOfNumb != 2000000) {
+        char*h = randstring(5,j);
+        clock_t start = clock();
+        insertDoubleHash(&rootMyHash,h);
+        clock_t stop = clock();
+        temp = temp + (double)(stop - start) *1000.0/ (double)CLOCKS_PER_SEC;
+        j++;
+    }
+    printf("Time elapsed : %.f ms\n", temp);
+
+
+    while ( rootMyHash->countOfNumb != 0) {
+
+        char*h = randstring(5,j);
+        clock_t start = clock();
+        searchDoubleHash(&rootMyHash,h);
+        clock_t stop = clock();
+        j++;
+        temp = temp + (double)(stop - start) *1000.0/ (double)CLOCKS_PER_SEC;
+        rootMyHash->countOfNumb--;
+    }
+    //printDoubleHash(rootMyHash);
+    printf("Time elapsed : %.f ms\n", temp);
+}

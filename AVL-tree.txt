@@ -247,69 +247,42 @@ char *randstring(size_t length,int x) {                                 // Funkc
 }
 
 
-
+#define NB_ELEMS 2000000
 
 int main() {
-
-
-
-
     PERSON* root=NULL;
     int i;
     celkovy_pocet = 0;
-
-    /*root = insert(root,"ada");
-    root = insert(root,"bed");
-    root = insert(root,"adg");
-    root = insert(root,"afg");
-    root = insert(root,"bgh");
-    root = insert(root,"bhg");
-    root = insert(root,"kli");
-    root = insert(root,"oop");
-    root = insert(root,"dsa");
-    root = insert(root,"ckp");
-
-
-    root = delete(root,"dsa");
-    root = insert(root,"ccc");
-    root = insert(root,"ccd");
-    root = delete(root,"bhg");
-     */
     char* data;
     double elapsed = 0;
-    while(celkovy_pocet!=100000){
-
-        data = randstring(5,celkovy_pocet);
-        clock_t start = clock();
-        root = insert(root,data);
-        clock_t stop = clock();
-        elapsed = elapsed + (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-        celkovy_pocet++;
 
 
-
+    for (int p = 0; p < NB_ELEMS; p++) {
+        char *h = randstring(5, p);
+        clock_t t0 = clock();
+        root = insert(root,h);
+        clock_t t1 = clock();
+        elapsed = elapsed+ (float)(t1 - t0) / CLOCKS_PER_SEC * 1000;
     }
 
 
-
-
-    printf("INSERTED 1 000 000 random strings:\n");
+    printf("INSERTED %d random strings:\n",NB_ELEMS);
     printf("Time elapsed : %.f ms\n", elapsed);
-    printf("Height of tree: %d\n", root->height);
+    printf("Height of tree: %d\n\n", root->height);
 
 
     double elapsed2= 0;
-    while(celkovy_pocet!=0){
-        data = randstring(5,celkovy_pocet);
+    for (int p1 = 0; p1<NB_ELEMS;p1++){
+
+        char*h = randstring(5,p1);
         clock_t start2 = clock();
-        search(root,data);
+        search(root,h);
         clock_t stop2 = clock();
         elapsed2 = elapsed2 + (double)(stop2 - start2) * 1000.0 / CLOCKS_PER_SEC;
-        celkovy_pocet--;
     }
 
 
-    printf("SEARCHED for 1 000 000 random strings:\n");
+    printf("SEARCHED for %d random strings:\n",NB_ELEMS);
     printf("Time elapsed : %.f ms\n", elapsed2);
 
     return 0;

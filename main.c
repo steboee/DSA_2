@@ -1,161 +1,116 @@
 
-// C program for Red-Black Tree insertion
-#include<stdio.h>
-#include<stdlib.h>
-#include<time.h>
-#include<string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 
-struct node
-{
-    char* data;
-    char color;
-    struct node *left, *right, *parent;
-};
+
+typedef struct person{
+    char*name;
+    int age;
+    struct person* next;
+}PERSON;
 
 
-//LEFT
-void LeftRotate(struct node **root,struct node *x)
-{
-    if (!x || !x->right)
-        return ;
-    //y stored pointer of right child of x
-    struct node *y = x->right;
+typedef struct table{
+    struct person* data;
+}TABLE;
 
-    //store y's left subtree's pointer as x's right child
-    x->right = y->left;
 
-    //update parent pointer of x's right
-    if (x->right != NULL)
-        x->right->parent = x;
 
-    //update y's parent pointer
-    y->parent = x->parent;
+TABLE* table;
+int max=100;                   // počitočná veľkosť hashovacej tabulky
+int count = 0;                  // počítadlo koľko prvkov už je v tabulke
+int count_resize =0;            // pocitadlo kolkokrat sa velkost tabulky zvacsovala
 
-    // if x's parent is null make y as root of tree
-    if (x->parent == NULL)
-        (*root) = y;
 
-        // store y at the place of x
-    else if (x == x->parent->left)
-        x->parent->left = y;
-    else    x->parent->right = y;
 
-    // make x as left child of y
-    y->left = x;
+int hash(char*meno){                // hash funckia , dostane string --> vráti index
+    int len = (int)strlen(meno);
+    int h=0;
+    for (int i = 0; i< len;i++){      // prejde celým stringom
+        h = (31*h + meno[i] ) % max ;
+    }
 
-    //update parent pointer of x
-    x->parent = y;
+    return h;
+
 }
 
-
-// Right Rotation (Similar to LeftRotate)
-void rightRotate(struct node **root,struct node *y)
-{
-    if (!y || !y->left)
-        return ;
-    struct node *x = y->left;
-    y->left = x->right;
-    if (x->right != NULL)
-        x->right->parent = y;
-    x->parent =y->parent;
-    if (x->parent == NULL)
-        (*root) = x;
-    else if (y == y->parent->left)
-        y->parent->left = x;
-    else y->parent->right = x;
-    x->right = y;
-    y->parent = x;
+void init_table(){                  // funkcia inicializuje hashovaciu tabuľku a nastaví všetko na NULL
+    for (int i =0;i< max ;i++){
+        (table+i)->data = NULL;
+    }
 }
 
-// Utility function to fixup the Red-Black tree after standard BST insertion
-void insertFixUp(struct node **root,struct node *z)
-{
-    // iterate until z is not the root and z's parent color is red
-    while (z != *root && z != (*root)->left && z != (*root)->right && z->parent->color == 'R')
-    {
-        struct node *y;
+int insert(PERSON*p){           // funkcia na vkladanie dát do hashovacej tabulky, vstupom je dátová štruktúra PERSON
+    if (p == NULL){
+        return 0;
+    }
+    int index = hash(p->name);      // podľa stringu sa vygeneruje index
+    p->next = table[index].data;      // každý bucket ma vlastný LINK-LIST, a pri kolízií nové dáta uložím na prvé miesto v link-liste a ostatné posuniem
+    table[index].data = p;
+    count++;                    // globalna premenná určuje naplnenosť tabulky
+    return 1;
+}
 
-        // Find uncle and store uncle in y
-        if (z->parent && z->parent->parent && z->parent == z->parent->parent->left)
-            y = z->parent->parent->right;
-        else
-            y = z->parent->parent->left;
+void resize_table(){                    // Funkcia mení veľkosť hashovacej tabulky,
+    count_resize++;                     // počítadlo koľkokrát tabuľka menila velkost
+    TABLE *temp = table;                // temp reprezentuje starú tabulku
+    int old_max = max;                  // old_max reprezentuje starú veľkosť tabulky
+    count =0;                           // nastavím globálnu premennú počítadla prvkov v tabulke na 0
+    max = max*2;                        // doterajsiu velkost tabulky zvacsím 2 - naśobne
 
-        // If uncle is RED, do following
-        // (i)  Change color of parent and uncle as BLACK
-        // (ii) Change color of grandparent as RED
-        // (iii) Move z to grandparent
-        if (!y)
-            z = z->parent->parent;
-        else if (y->color == 'R')
-        {
-            y->color = 'B';
-            z->parent->color = 'B';
-            z->parent->parent->color = 'R';
-            z = z->parent->parent;
+
+    table = (TABLE*)malloc(max*sizeof(TABLE));          // alokujem novú tabulku s 2-nasobnou velkostou
+    init_table();                                       // novu tabulku inicializujem
+    for (int i =0;i<old_max;i++){                       // musim prejsť každý bucket v starej hashovacej tabulke a prehashovať ich do novej
+        PERSON*a = (PERSON*) temp[i].data;
+        if (a == NULL){
+            continue;
         }
-
-            // Uncle is BLACK, there are four cases (LL, LR, RL and RR)
-        else
-        {
-            // Left-Left (LL) case, do following
-            // (i)  Swap color of parent and grandparent
-            // (ii) Right Rotate Grandparent
-            if (z->parent == z->parent->parent->left &&
-                z == z->parent->left)
-            {
-                char ch = z->parent->color ;
-                z->parent->color = z->parent->parent->color;
-                z->parent->parent->color = ch;
-                rightRotate(root,z->parent->parent);
-            }
-
-            // Left-Right (LR) case, do following
-            // (i)  Swap color of current node  and grandparent
-            // (ii) Left Rotate Parent
-            // (iii) Right Rotate Grand Parent
-            if (z->parent && z->parent->parent && z->parent == z->parent->parent->left &&
-                z == z->parent->right)
-            {
-                char ch = z->color ;
-                z->color = z->parent->parent->color;
-                z->parent->parent->color = ch;
-                LeftRotate(root,z->parent);
-                rightRotate(root,z->parent->parent);
-            }
-
-            // Right-Right (RR) case, do following
-            // (i)  Swap color of parent and grandparent
-            // (ii) Left Rotate Grandparent
-            if (z->parent && z->parent->parent &&
-                z->parent == z->parent->parent->right &&
-                z == z->parent->right)
-            {
-                char ch = z->parent->color ;
-                z->parent->color = z->parent->parent->color;
-                z->parent->parent->color = ch;
-                LeftRotate(root,z->parent->parent);
-            }
-
-            // Right-Left (RL) case, do following
-            // (i)  Swap color of current node  and grandparent
-            // (ii) Right Rotate Parent
-            // (iii) Left Rotate Grand Parent
-            if (z->parent && z->parent->parent && z->parent == z->parent->parent->right &&
-                z == z->parent->left)
-            {
-                char ch = z->color ;
-                z->color = z->parent->parent->color;
-                z->parent->parent->color = ch;
-                rightRotate(root,z->parent);
-                LeftRotate(root,z->parent->parent);
+        else{
+            while(a != NULL){                           // Prípad ked mám v buckete link list s najmenej 2 dátami
+                PERSON*a_t;                             // nasledujúce dáta v link liste
+                a_t = a->next;
+                insert(a);                              // do novej tabulky insertnem dáta zo starej tabulky
+                a = a_t;                                // dalšie dáta z link listu ktoré by sa po zavolani insert(a) v predoslom riadku stratili, preto nové a -> reprezentuje dalše dáta
             }
         }
     }
-    (*root)->color = 'B'; //keep root always black
+    free(temp);                                         // uvolním celú predošlu tabulku
+    temp = NULL;
 }
 
+int load_factor(){                              // funkcia počíta load factor a pri určitej hodnote returne 1 čím sa velkost tabulky zvacsí
+    int bucket = max;                           // počet bucketov celkovo
+    int data = count;                           // pocet dát v tabulke
+    double alpha = (double)data/(double)bucket;
+    if (alpha > 0.50){                              // ak je tabulka z polovice naplnená dátami tak zvaČší velkost
+        return 1;
+    }
+    return 0;
+}
+
+void print_table(){                                     // pomocná funkcia , inšpirovaná githubom/stackoverflow ,
+    printf("Start\n");                                  // použival som ju na vizualizáciu hashovacej tabulky a dokázala aj ukázať kolízie čiže aj dáta v link liste
+    for (int i =0;i<max;i++){
+        if (table[i].data == NULL){
+            printf("\t%i\t---\n",i);
+        }
+        else{
+            printf("\t%i\t ",i);
+            PERSON *temp = table[i].data;
+            while (temp != NULL){
+                printf("%s - ",temp->name);
+                temp = temp->next;
+            }
+            printf("\n");
+        }
+
+    }
+    printf("END\n");
+}
 
 char *randstring(size_t length,int x) {                                 // Funkcia ktorá generuje náhodné stringy, používam ju v každej implementácií aby boli výsledky viac relevantné
 
@@ -177,89 +132,97 @@ char *randstring(size_t length,int x) {                                 // Funkc
     return randomString;
 }
 
+PERSON * create_data(int i){                                        // funkcia vytvorí nové dáta a meno je na základe funkcie na random generáciu stringu
+    PERSON *data = malloc(sizeof(PERSON));
+    data->name = randstring(5,i);
+    data->age = 20;                                                // vek som nemenil randomne aby sa program zbytočne nezatažoval..
+    data->next = NULL;
+    return data;
+}
 
-
-// Utility function to insert newly node in RedBlack tree
-void insert(struct node **root, char* data)
-{
-    // Allocate memory for new node
-    struct node *z = (struct node*)malloc(sizeof(struct node));
-    z->data = data;
-    z->left = z->right = z->parent = NULL;
-
-    //if root is null make z as root
-    if (*root == NULL)
-    {
-        z->color = 'B';
-        (*root) = z;
-    }
-    else
-    {
-        struct node *y = NULL;
-        struct node *x = (*root);
-
-        // Follow standard BST insert steps to first insert the node
-        while (x != NULL)
-        {
-            y = x;
-            if (strcmp(z->data,x->data)<0)
-                x = x->left;
-            else
-                x = x->right;
+PERSON* search(char*name){                      // FUNKCIA na hladanie dát v hashovacej tabulke, ak najde prvok tak vŕati celú štruktúru
+    int h = hash(name);                         // podla mena najde index v tabulke
+    while (table[h].data != NULL){              // v pripade že tam bude aj link list , pokracuj az kym data na danom indexe v tabulke niesu NULL
+        if (strcmp(table[h].data->name,name)==0){       // ak sa rovná meno tak sa nasli dané dáta
+            return table[h].data;
         }
-        z->parent = y;
-        if (strcmp(z->data,y->data)>0)
-            y->right = z;
-        else
-            y->left = z;
-        z->color = 'R';
-
-        // call insertFixUp to fix reb-black tree's property if it
-        // is voilated due to insertion.
-        insertFixUp(root,z);
+        table[h].data = table[h].data->next;    // posun sa v link liste dalej
     }
+    return NULL;
 }
 
-// A utility function to traverse Red-Black tree in inorder fashion
-void inorder(struct node *root)
-{
-    char* last = "0";
-    if (root == NULL)
-        return;
-    inorder(root->left);
-    printf("%s ", root->data);
-    if (strcmp(root->data,last)==0)
-        printf("\nPUTE\n");
-    last = root->data;
-    inorder(root->right);
+void delete_table(){                                    // funkcia vymaže celú hashovaciu tabulku a dealokuje všetky alokácie
+    int i = 0;
+    for (i = 0; i < max; i++)                           // opakuj tolkokrát aká velka je tabulka
+    {
+        TABLE temp = table[i];                          // pomocná premenná temp ktorá ukladá "bucket"
+        PERSON* first = temp.data;                      // premenná first ma v sebe dáta z bucketu
+        if (first != NULL)                              // ak nieje prázdny bucket tak ->
+        {
+            while (first->next != NULL)                 // pokiaľ sú dalsie dáta v link liste -> tak
+            {
+                PERSON* old = first;                    // pomocná premenná ktorú uvolním
+                first = first->next;                    // posuniem sa dalej v link liste
+                free(old);
+            }
+            free(first);                                // ak už nieje další zaznam v link liste a mám posledný , uvolním ho
+            first = NULL;
+        }
+
+        temp.data = NULL;
+    }
+    free(table);                                        // nakoniec uvolnim celu tabulku
+    table = NULL;
 }
 
 
 
-#define NB_ELEMS 1000000
+/* TESTOVANIE SOM ZAHRNOL DO FUNKCIE MAIN*/
 
-/* Drier program to test above function*/
-int main()
-{
-    srand(time(NULL));
-    struct node *root = NULL;
 
-    float time_taken=0;
-    for (int i = 0; i < NB_ELEMS; ++i) {
-        char *h = randstring(10, i);
-        clock_t t0 = clock();
-        insert(&root, h);
-        clock_t t1 = clock();
-        time_taken = time_taken+ (float)(t1 - t0) / CLOCKS_PER_SEC * 1000;
+int main(){
+    int items = 2000000;                                // pocet dát ktoré chcem vložiť do hashovacej tabulky
+    table = malloc(max*sizeof(PERSON));                 // alokujem prvotnú hashovaciu tabulku o velkosti max ( globalńa premenná ) riadok 23
+    init_table();                                       // inicializujem tabulku ( nastavim všetky buckety na NULL
+    PERSON *u;
+    double elapsed=0;
+
+    for (int i =0;i<items;i++){                         // TESTOVAC , vkladá (items) dát do tabulky
+        u = create_data(i);                             // za kazdým sa vytvoria nahodné dáta
+        clock_t start = clock();
+        insert(u);                                      // vkladanie do tabulky
+        if(load_factor()){                              // za kazdym vlozenim program skotnroluje load factor
+            resize_table();                             // ak je potrebné tak sa tabulka zvačší
+        }
+        clock_t stop = clock();
+        elapsed = elapsed + (double)(stop - start) *1000.0/ (double)CLOCKS_PER_SEC;
     }
 
-    printf("inorder Traversal Is :\n");
-    //inorder(root);
-    //printf("\n");
 
-    printf("insertion took %fms -> %fus/elem\n",
-           time_taken,
-           time_taken / NB_ELEMS * 1000);
+    printf("INSERTED %d data\n",items);
+    printf("Time elapsed : %.f ms\n", elapsed);
+    printf("Number of resizes : %d\n",count_resize);
+    int searched_items=0;
+    double elapsed2=0;
+
+
+    for (int i =0;i<items;i++){                         // TESTOVAC , vkladá (items) dát do tabulky
+        u = create_data(i);
+        clock_t start = clock();
+        if(search(u->name)){
+            searched_items++;
+        }
+        clock_t stop = clock();
+        elapsed2 = elapsed2 + (double)(stop - start) *1000.0/ (double)CLOCKS_PER_SEC;
+    }
+
+
+    printf("SEARCHED FOR %d random data\n",items);
+    printf("Time elapsed : %.f ms\n", elapsed2);
+    printf("Number of data found : %d\n",searched_items);
+
+    delete_table();
 
     return 0;
+
 }

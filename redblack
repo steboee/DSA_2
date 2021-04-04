@@ -236,7 +236,7 @@ void inorder(struct node *root)
 
 
 
-#define NB_ELEMS 1000000
+#define NB_ELEMS 2000000
 
 /* Drier program to test above function*/
 int main()
@@ -246,7 +246,7 @@ int main()
 
     float time_taken=0;
     for (int i = 0; i < NB_ELEMS; ++i) {
-        char *h = randstring(10, i);
+        char *h = randstring(5, i);
         clock_t t0 = clock();
         insert(&root, h);
         clock_t t1 = clock();
